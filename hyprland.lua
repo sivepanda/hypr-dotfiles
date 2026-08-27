@@ -230,6 +230,7 @@ hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { description = "Files"
 hl.bind(mainMod .. " + C", hl.dsp.window.close(), { description = "Close window" })
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("flatpak run com.discordapp.Discord"), { description = "Discord" })
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("hyprshutdown"), { description = "Power menu" })
+hl.bind(mainMod .. " + CTRL + M", hl.dsp.exit(), { description = "Exit Hyprland", locked = "true"})
 hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("spotify"), { description = "Spotify" })
 hl.bind(mainMod .. " + F", hl.dsp.exec_cmd("/usr/bin/zen/zen"), { description = "Browser" })
 hl.bind(mainMod .. " + CTRL + Z", hl.dsp.exec_cmd("zoom"), { description = "Zoom" })
