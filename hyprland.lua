@@ -11,6 +11,7 @@
 -- hl.monitor({ output = "eDP-1", mode = "1900x1200@60", position = "2560x0", scale = 1.25 })
 
 hl.monitor({ output = "eDP-1", mode = "1900x1200@60", position = "0x0", scale = 1 })
+hl.monitor({ output = "DP-2", mode = "2560x1440@144", position = "1900x0", scale = 1 })
 
 ---------------------
 ---- MY PROGRAMS ----
@@ -27,6 +28,8 @@ local menu = "vicinae toggle"
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
 hl.on("hyprland.start", function()
     hl.exec_cmd("waybar & hyprpaper & solaar & openrgb & hypridle")
+    hl.exec_cmd("/home/siven/eww/target/release/eww open-many calendar-widget media-widget")
+    hl.exec_cmd("bash /home/siven/.config/hypr/eww-workspace.sh")
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
     hl.exec_cmd("nmcli d connect wlp8s0")
     hl.exec_cmd("bluetoothctl trust AC:BF:71:C8:79:F9")
@@ -48,7 +51,13 @@ hl.env("XDG_SESSION_TYPE", "wayland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
-hl.env("AQ_DRM_DEVICES", "/dev/dri/card1:/dev/dri/card2")
+-- No AQ_DRM_DEVICES on purpose. Card numbers are not stable across boots (the
+-- iGPU has been card2 and card1 on consecutive boots), and the stable
+-- /dev/dri/by-path/ names CANNOT be used here: AQ_DRM_DEVICES is colon
+-- separated and PCI paths contain colons, so the value gets shredded into
+-- fragments and aquamarine aborts with "Found no gpus to use".
+-- It is unnecessary anyway: the NVIDIA card is not a KMS device, so aquamarine
+-- skips it and picks the Intel iGPU (which owns every connector) by itself.
 hl.env("DRI_PRIME", "0")
 
 -----------------------
@@ -105,6 +114,7 @@ hl.curve("eazy", { type = "bezier", points = { { 0.17, 0.24 }, { 0.28, 1 } } })
 hl.curve("bouncy", { type = "bezier", points = { { 0, 0.63 }, { 0.31, 1.11 } } })
 hl.curve("easeOutQuint", { type = "bezier", points = { { 0.23, 1 }, { 0.32, 1 } } })
 hl.curve("easeInOutCubic", { type = "bezier", points = { { 0.65, 0.05 }, { 0.36, 1 } } })
+hl.curve("easeInOutCool", { type = "bezier", points = { { 0.75, 0.43}, { 0, 0.9 } } })
 hl.curve("linear", { type = "bezier", points = { { 0, 0 }, { 1, 1 } } })
 hl.curve("almostLinear", { type = "bezier", points = { { 0.5, 0.5 }, { 0.75, 1.0 } } })
 hl.curve("quick", { type = "bezier", points = { { 0.15, 0 }, { 0.1, 1 } } })
@@ -113,8 +123,8 @@ hl.curve("smooth", { type = "bezier", points = { { 0.5, 0.06 }, { 0.31, 0.98 } }
 hl.animation({ leaf = "global", enabled = true, speed = 10, bezier = "default" })
 hl.animation({ leaf = "border", enabled = true, speed = 5.39, bezier = "easeOutQuint" })
 hl.animation({ leaf = "windows", enabled = true, speed = 3, bezier = "eazy", style = "gnomed" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 3, bezier = "bouncy", style = "gnomed" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.49, bezier = "bouncy", style = "popin 87%" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 1.49, bezier = "easeInOutCool", style = "gnomed" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 3, bezier = "bouncy", style = "popin 87%" })
 hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.46, bezier = "almostLinear" })
 hl.animation({ leaf = "fade", enabled = true, speed = 3.03, bezier = "quick" })
 hl.animation({ leaf = "layers", enabled = true, speed = 3.81, bezier = "easeOutQuint" })
@@ -127,8 +137,10 @@ hl.animation({ leaf = "workspacesIn", enabled = true, speed = 1.21, bezier = "al
 hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
 
 hl.layer_rule({ match = { namespace = "hyprlock" }, xray = true })
-hl.layer_rule({ match = { namespace = "waybar" }, blur = true })
-hl.layer_rule({ match = { namespace = "vicinae" }, blur = true })
+hl.layer_rule({ name = "blur-waybar", match = { namespace = "^waybar$" }, blur = true })
+hl.layer_rule({ name = "blur-eww-calendar", match = { namespace = "^eww-calendar$" }, blur = true, ignore_alpha = 0.05 })
+hl.layer_rule({ name = "blur-eww-media", match = { namespace = "^eww-media$" }, blur = true, ignore_alpha = 0.05 })
+hl.layer_rule({ name = "blur-vicinae", match = { namespace = "^vicinae$" }, blur = true })
 
 hl.config({
     dwindle = {
@@ -231,6 +243,7 @@ hl.bind(mainMod .. " + C", hl.dsp.window.close(), { description = "Close window"
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("flatpak run com.discordapp.Discord"), { description = "Discord" })
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("hyprshutdown"), { description = "Power menu" })
 hl.bind(mainMod .. " + CTRL + M", hl.dsp.exit(), { description = "Exit Hyprland", locked = "true"})
+hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("thunderbird"), { description = "Thunderbird" })
 hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("spotify"), { description = "Spotify" })
 hl.bind(mainMod .. " + F", hl.dsp.exec_cmd("/usr/bin/zen/zen"), { description = "Browser" })
 hl.bind(mainMod .. " + CTRL + Z", hl.dsp.exec_cmd("zoom"), { description = "Zoom" })
@@ -238,6 +251,8 @@ hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("loginctl lock-session"), { descripti
 hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("hyprpicker -a"), { description = "Color picker" })
 hl.bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("vicinae vicinae://extensions/vicinae/clipboard/history"), { description = "Clipboard History" })
 hl.bind(mainMod .. " + CTRL + F", hl.dsp.exec_cmd("vicinae vicinae://extensions/vicinae/browser-extension/browse-tabs"), { description = "Zen Tabs" })
+hl.bind(mainMod .. " + CTRL + SHIFT + A", hl.dsp.exec_cmd("pavucontrol"), { description = "Audio Control "})
+hl.bind(mainMod .. " + CTRL + SHIFT + B", hl.dsp.exec_cmd("blueberry"), { description = "Bluetooth Control"})
 
 -- Tiling WM (Dwindle) motions.
 hl.bind(mainMod .. " + CTRL + K", hl.dsp.focus({ workspace = "e+1" }), { description = "Next workspace", repeating = true })
@@ -253,6 +268,7 @@ hl.bind(mainMod .. " + mouse_up", hl.dsp.layout("move +col"), { description = "M
 hl.bind(mainMod .. " + mouse_down", hl.dsp.layout("move -col"), { description = "Move column left" })
 
 -- Motions.
+hl.bind(mainMod .. " + SHIFT + X", hl.dsp.window.float({ action = "toggle" }) )
 hl.bind(mainMod .. " + SHIFT + K", hl.dsp.window.move({ workspace = "e+1" }), { description = "Move to next workspace", repeating = true })
 hl.bind(mainMod .. " + SHIFT + J", hl.dsp.window.move({ workspace = "e-1" }), { description = "Move to prev workspace", repeating = true })
 
